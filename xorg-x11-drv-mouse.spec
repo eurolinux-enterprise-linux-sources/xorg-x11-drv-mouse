@@ -2,22 +2,32 @@
 %global moduledir %(pkg-config xorg-server --variable=moduledir )
 %global driverdir %{moduledir}/input
 
+#global gitdate 20101125
+
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
-Version:   1.7.0
-Release:   4%{?dist}
+Version:   1.8.1
+Release:   7%{?gitdate:.%{gitdate}}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%if 0%{?gitdate}
+Source0:   %{tarball}-%{gitdate}.tar.bz2
+Source1:   make-git-snapshot.sh
+Source2:   commitid
+%else
 Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
+%endif
+
+Patch01:   mouse-0001-Use-signal-safe-logging-if-available.patch
 
 ExcludeArch: s390 s390x
 
 BuildRequires: autoconf automake libtool
-BuildRequires: xorg-x11-server-sdk >= 1.10.0-1
-BuildRequires: xorg-x11-util-macros >= 1.8.0
+BuildRequires: xorg-x11-server-sdk >= 1.10.99.902
+BuildRequires: xorg-x11-util-macros >= 1.17
 
 Requires:  Xorg %(xserver-sdk-abi-requires ansic)
 Requires:  Xorg %(xserver-sdk-abi-requires xinput)
@@ -26,12 +36,13 @@ Requires:  Xorg %(xserver-sdk-abi-requires xinput)
 X.Org X11 mouse input driver.
 
 %prep
-%setup -q -n %{tarball}-%{version}
+%setup -q -n %{tarball}-%{?gitdate:%{gitdate}}%{!?gitdate:%{version}}
+%patch01 -p1
 
 %build
-autoreconf -v --force --install || exit 1
-%configure --disable-static
-make
+autoreconf --force -v --install || exit 1
+%configure --disable-static --disable-silent-rules
+make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -49,7 +60,30 @@ rm -rf $RPM_BUILD_ROOT
 %{driverdir}/mouse_drv.so
 %{_mandir}/man4/mousedrv.4*
 
+%package devel
+Summary:    Xorg X11 mouse input driver development package.
+Group:      Development/Libraries
+Requires:   pkgconfig
+%description devel
+X.Org X11 mouse input driver development files.
+
+%files devel
+%defattr(-,root,root,-)
+%doc COPYING
+%dir %{_includedir}/xorg
+%{_includedir}/xorg/xf86-mouse-properties.h
+%{_libdir}/pkgconfig/xorg-mouse.pc
+
 %changelog
+* Thu Nov 01 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-7
+- Fix {?dist} tag (#871455)
+
+* Mon Aug 27 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.1-6
+- Rebuild for server 1.13
+
+* Mon Jul 30 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.1-4
+- Merge from F18 (#835242)
+
 * Tue Jun 28 2011 Peter Hutterer <peter.hutterer@redhat.com> 1.7.0-4
 - mouse 1.7.0 (#713809)
 
