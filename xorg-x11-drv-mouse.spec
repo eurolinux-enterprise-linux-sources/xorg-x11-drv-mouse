@@ -6,12 +6,11 @@
 
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
-Version:   1.9.0
+Version:   1.9.1
 Release:   1%{?gitdate:.%{gitdate}}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if 0%{?gitdate}
 Source0:   %{tarball}-%{gitdate}.tar.bz2
@@ -24,11 +23,11 @@ Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
 ExcludeArch: s390 s390x
 
 BuildRequires: autoconf automake libtool
-BuildRequires: xorg-x11-server-sdk >= 1.10.99.902
-BuildRequires: xorg-x11-util-macros >= 1.17
+BuildRequires: xorg-x11-server-devel >= 1.10.99.902
+BuildRequires: xorg-x11-util-macros >= 1.3.0
 
-Requires:  Xorg %(xserver-sdk-abi-requires ansic)
-Requires:  Xorg %(xserver-sdk-abi-requires xinput)
+Requires: Xorg %(xserver-sdk-abi-requires ansic)
+Requires: Xorg %(xserver-sdk-abi-requires xinput)
 
 %description 
 X.Org X11 mouse input driver.
@@ -72,32 +71,132 @@ X.Org X11 mouse input driver development files.
 %{_libdir}/pkgconfig/xorg-mouse.pc
 
 %changelog
-* Wed Apr 23 2014 Adam Jackson <ajax@redhat.com> 1.9.0-1
+* Mon Apr 20 2015 Peter Hutterer <peter.hutterer@redhat.com> 1.9.1-1
+- xf86-input-mouse 1.9.1 (#1194879)
+
+* Wed Aug 20 2014 Adam Jackson <ajax@redhat.com> 1.9.0-7
+- Build on PPC
+
+* Wed Jan 15 2014 Adam Jackson <ajax@redhat.com> - 1.9.0-6
+- 1.15 ABI rebuild
+
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 1.9.0-5
+- Mass rebuild 2013-12-27
+
+* Wed Nov 06 2013 Adam Jackson <ajax@redhat.com> - 1.9.0-4
+- 1.15RC1 ABI rebuild
+
+* Fri Oct 25 2013 Adam Jackson <ajax@redhat.com> - 1.9.0-3
+- ABI rebuild
+
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.9.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Wed Mar 27 2013 Peter Hutterer <peter.hutterer@redhat.com> 1.9.0-1
 - mouse 1.9.0
 
-* Thu Nov 01 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-7
-- Fix {?dist} tag (#871455)
+* Thu Mar 07 2013 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-8
+- require xorg-x11-server-devel, not -sdk
 
-* Mon Aug 27 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.1-6
-- Rebuild for server 1.13
+* Thu Mar 07 2013 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-7
+- ABI rebuild
 
-* Mon Jul 30 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.1-4
-- Merge from F18 (#835242)
+* Fri Feb 15 2013 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-6
+- ABI rebuild
 
-* Tue Jun 28 2011 Peter Hutterer <peter.hutterer@redhat.com> 1.7.0-4
-- mouse 1.7.0 (#713809)
+* Fri Feb 15 2013 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-5
+- ABI rebuild
 
-* Mon Feb 08 2010 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-4
-- mouse-1.5.0-memleak.patch: fix memory leak on shutdown.
+* Thu Jan 10 2013 Adam Jackson <ajax@redhat.com> - 1.8.1-4
+- ABI rebuild
 
-* Wed Jan 06 2010 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-3
-- Use global instead of define as per Packaging Guidelines
-- Remove traces of git build.
+* Wed Oct 31 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-3
+- Fix {?dist} tag
+
+* Thu Aug 02 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.1-2
+- Force autoreconf to avoid libtool versioning errors
+
+* Tue Jul 31 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.1-1
+- mouse 1.8.1
+
+* Mon Jul 30 2012 Peter Hutterer <peter.hutterer@redhat.com> 1.8.0-1
+- mouse 1.8.0
+
+* Sun Jul 22 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.7.2-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Wed Jul 18 2012 Dave Airlie <airlied@redhat.com> - 1.7.2-3
+- ABI rebuild
+
+* Thu Apr 05 2012 Adam Jackson <ajax@redhat.com> - 1.7.2-2
+- RHEL arch exclude updates
+
+* Fri Mar 16 2012 Adam Jackson <ajax@redhat.com> 1.7.2-1
+- mouse 1.7.2
+
+* Sat Feb 11 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.7.1-8
+- ABI rebuild
+
+* Fri Feb 10 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.7.1-7
+- ABI rebuild
+
+* Tue Jan 24 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.7.1-6
+- ABI rebuild
+
+* Wed Jan 04 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.7.1-5
+- Rebuild for server 1.12
+
+* Mon Nov 14 2011 Adam Jackson <ajax@redhat.com> - 1.7.1-4
+- ABI rebuild
+
+* Wed Nov 09 2011 ajax <ajax@redhat.com> - 1.7.1-3
+- ABI rebuild
+
+* Thu Aug 18 2011 Adam Jackson <ajax@redhat.com> - 1.7.1-2
+- Rebuild for xserver 1.11 ABI
+
+* Thu Jul 07 2011 Peter Hutterer <peter.hutterer@redhat.com>
+- Disable silent rules on build, build with _smp_mflags
+
+* Wed Jul 06 2011 Peter Hutterer <peter.hutterer@redhat.com> 1.7.1-1
+- mouse 1.7.1
+
+* Thu Mar 10 2011 Peter Hutterer <peter.hutterer@redhat.com> 1.7.0-1
+- mouse 1.7.0
+
+* Mon Feb 21 2011 Peter Hutterer <peter.hutterer@redhat.com> 1.6.99.901-1
+- mouse 1.7RC1
+
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.6.99-3.20101125
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Thu Nov 25 2010 Peter Hutterer <peter.hutterer@redhat.com> - 1.6.99-2.20101125
+- Rebuild for server 1.10
+
+* Thu Nov 25 2010 Peter Hutterer <peter.hutterer@redhat.com> 1.6.99-1.20101125
+- today's git snapshot
+- add a few more flexible git hooks to the spec file
+- add commitid file
+
+* Wed Oct 27 2010 Adam Jackson <ajax@redhat.com> 1.6.0-2
+- Add ABI requires magic (#542742)
+
+* Thu Sep 09 2010 Peter Hutterer <peter.hutterer@redhat.com> 1.6.0-1
+- mouse 1.6.0
+
+* Mon Jul 05 2010 Peter Hutterer <peter.hutterer@redhat.com> - 1.5.0-5
+- rebuild for X Server 1.9
+
+* Thu Jan 21 2010 Peter Hutterer <peter.hutterer@redhat.com> - 1.5.0-4
+- Rebuild for server 1.8
+
+* Thu Jan 07 2010 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-3
+- Use global instead of define as per Packaging Guidelines.
 
 * Fri Nov 20 2009 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-2
 - BuildRequires xorg-x11-util-macros 1.3.0
 
-* Fri Nov 20 2009 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-1
+* Tue Oct 06 2009 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-1
 - mouse 1.5.0
 
 * Thu Sep 10 2009 Peter Hutterer <peter.hutterer@redhat.com> 1.4.99.1-2
