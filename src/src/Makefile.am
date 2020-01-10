@@ -19,7 +19,7 @@
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 AM_CFLAGS = $(CWARNFLAGS) 
-AM_CPPFLAGS = $(XORG_CFLAGS) -I$(top_srcdir)/src
+AM_CPPFLAGS = $(XORG_CFLAGS)
 
 # this is obnoxious:
 # -module lets us name the module exactly how we want
@@ -39,7 +39,6 @@ OS_SRCS = bsd_mouse.c hurd_mouse.c lnx_mouse.c sun_mouse.c
 	mouse.h \
 	pnp.c \
 	mousePriv.h \
-	xf86OSmouse.h \
 	@OS_MOUSE_NAME@_mouse.c
 
 EXTRA_DIST = $(OS_SRCS)

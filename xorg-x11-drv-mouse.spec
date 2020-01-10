@@ -4,7 +4,7 @@
 
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
-Version:   1.5.0
+Version:   1.7.0
 Release:   4%{?dist}
 URL:       http://www.x.org
 License:   MIT
@@ -13,15 +13,14 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
 
-Patch1:    mouse-1.5.0-memleak.patch
-
 ExcludeArch: s390 s390x
 
 BuildRequires: autoconf automake libtool
-BuildRequires: xorg-x11-server-sdk >= 1.5.99.1
-BuildRequires: xorg-x11-util-macros >= 1.3.0
+BuildRequires: xorg-x11-server-sdk >= 1.10.0-1
+BuildRequires: xorg-x11-util-macros >= 1.8.0
 
-Requires: xorg-x11-server-Xorg >= 1.5.99.1
+Requires:  Xorg %(xserver-sdk-abi-requires ansic)
+Requires:  Xorg %(xserver-sdk-abi-requires xinput)
 
 %description 
 X.Org X11 mouse input driver.
@@ -29,10 +28,8 @@ X.Org X11 mouse input driver.
 %prep
 %setup -q -n %{tarball}-%{version}
 
-%patch1 -p1
-
 %build
-autoreconf -v --install || exit 1
+autoreconf -v --force --install || exit 1
 %configure --disable-static
 make
 
@@ -53,6 +50,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man4/mousedrv.4*
 
 %changelog
+* Tue Jun 28 2011 Peter Hutterer <peter.hutterer@redhat.com> 1.7.0-4
+- mouse 1.7.0 (#713809)
+
 * Mon Feb 08 2010 Peter Hutterer <peter.hutterer@redhat.com> 1.5.0-4
 - mouse-1.5.0-memleak.patch: fix memory leak on shutdown.
 
