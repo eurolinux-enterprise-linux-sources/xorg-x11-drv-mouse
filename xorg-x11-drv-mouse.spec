@@ -6,8 +6,8 @@
 
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
-Version:   1.8.1
-Release:   7%{?gitdate:.%{gitdate}}%{?dist}
+Version:   1.9.0
+Release:   1%{?gitdate:.%{gitdate}}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -20,8 +20,6 @@ Source2:   commitid
 %else
 Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
 %endif
-
-Patch01:   mouse-0001-Use-signal-safe-logging-if-available.patch
 
 ExcludeArch: s390 s390x
 
@@ -37,7 +35,6 @@ X.Org X11 mouse input driver.
 
 %prep
 %setup -q -n %{tarball}-%{?gitdate:%{gitdate}}%{!?gitdate:%{version}}
-%patch01 -p1
 
 %build
 autoreconf --force -v --install || exit 1
@@ -75,6 +72,9 @@ X.Org X11 mouse input driver development files.
 %{_libdir}/pkgconfig/xorg-mouse.pc
 
 %changelog
+* Wed Apr 23 2014 Adam Jackson <ajax@redhat.com> 1.9.0-1
+- mouse 1.9.0
+
 * Thu Nov 01 2012 Peter Hutterer <peter.hutterer@redhat.com> - 1.8.1-7
 - Fix {?dist} tag (#871455)
 
