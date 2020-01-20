@@ -6,8 +6,8 @@
 
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
-Version:   1.9.0
-Release:   6%{?gitdate:.%{gitdate}}%{?dist}
+Version:   1.9.1
+Release:   1%{?gitdate:.%{gitdate}}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -20,7 +20,7 @@ Source2:   commitid
 Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
 %endif
 
-ExcludeArch: s390 s390x %{?rhel:ppc ppc64}
+ExcludeArch: s390 s390x
 
 BuildRequires: autoconf automake libtool
 BuildRequires: xorg-x11-server-devel >= 1.10.99.902
@@ -71,6 +71,12 @@ X.Org X11 mouse input driver development files.
 %{_libdir}/pkgconfig/xorg-mouse.pc
 
 %changelog
+* Mon Apr 20 2015 Peter Hutterer <peter.hutterer@redhat.com> 1.9.1-1
+- xf86-input-mouse 1.9.1 (#1194879)
+
+* Wed Aug 20 2014 Adam Jackson <ajax@redhat.com> 1.9.0-7
+- Build on PPC
+
 * Wed Jan 15 2014 Adam Jackson <ajax@redhat.com> - 1.9.0-6
 - 1.15 ABI rebuild
 
