@@ -1,3 +1,4 @@
-# ELS - Enterprise Linux/EuroLinux Sources - xorg-x11-drv-mouse 
+# ELS - Enterprise Linux/EuroLinux Sources - xorg-x11-drv-mouse
+ 
 ## Usage:
-  Checkout branch or tag.
+  Checkout branch or tag. Use `make sources` to recreate  SOURCE0 archive.
