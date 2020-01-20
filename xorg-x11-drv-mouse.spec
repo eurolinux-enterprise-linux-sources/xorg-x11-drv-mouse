@@ -7,7 +7,7 @@
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
 Version:   1.9.0
-Release:   4%{?gitdate:.%{gitdate}}%{?dist}
+Release:   6%{?gitdate:.%{gitdate}}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -71,6 +71,12 @@ X.Org X11 mouse input driver development files.
 %{_libdir}/pkgconfig/xorg-mouse.pc
 
 %changelog
+* Wed Jan 15 2014 Adam Jackson <ajax@redhat.com> - 1.9.0-6
+- 1.15 ABI rebuild
+
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 1.9.0-5
+- Mass rebuild 2013-12-27
+
 * Wed Nov 06 2013 Adam Jackson <ajax@redhat.com> - 1.9.0-4
 - 1.15RC1 ABI rebuild
 
