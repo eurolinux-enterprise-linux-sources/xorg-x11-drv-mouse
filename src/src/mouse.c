@@ -67,25 +67,12 @@
 #include "xserver-properties.h"
 #include "xf86-mouse-properties.h"
 
-#ifdef __NetBSD__
-#include <time.h>
-#include <dev/wscons/wsconsio.h>
-#include <sys/ioctl.h>
-#endif
-
 #include "compiler.h"
 
 #include "xisb.h"
 #include "mouse.h"
 #include "mousePriv.h"
 #include "mipointer.h"
-
-/* Xorg >= 1.10 provides an asprintf() implementation even if libc doesn't */
-#include "xorgVersion.h"
-#if defined(HAVE_ASPRINTF) || \
-    (XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(1,10,0,0,0))
-# define USE_ASPRINTF
-#endif
 
 enum {
     /* number of bits in mapped nibble */
@@ -129,18 +116,6 @@ typedef struct _DragLockRec {
 } DragLockRec, *DragLockPtr;
 
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 23
-#define HAVE_THREADED_INPUT	1
-#endif
-
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 24
-#define BLOCK_HANDLER_ARGS     	void *data, void *waitTime
-#define WAKEUP_HANDLER_ARGS	void *data, int i
-#else
-#define BLOCK_HANDLER_ARGS	pointer data, struct timeval **waitTime, pointer LastSelectMask
-#define WAKEUP_HANDLER_ARGS	void *data, int i, pointer LastSelectMask
-#endif
-
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
 static InputInfoPtr MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags);
 #else
@@ -152,8 +127,9 @@ static void MouseCtrl(DeviceIntPtr device, PtrCtrl *ctrl);
 static void MousePostEvent(InputInfoPtr pInfo, int buttons,
                            int dx, int dy, int dz, int dw);
 static void MouseReadInput(InputInfoPtr pInfo);
-static void MouseBlockHandler(BLOCK_HANDLER_ARGS);
-static void MouseWakeupHandler(WAKEUP_HANDLER_ARGS);
+static void MouseBlockHandler(pointer data, struct timeval **waitTime,
+                              pointer LastSelectMask);
+static void MouseWakeupHandler(pointer data, int i, pointer LastSelectMask);
 static void FlushButtons(MouseDevPtr pMse);
 
 static Bool SetupMouse(InputInfoPtr pInfo);
@@ -465,27 +441,20 @@ MouseCommonOptions(InputInfoPtr pInfo)
         } else if (sscanf(s, "%d %d %d %d", &b1, &b2, &b3, &b4) >= 2 &&
                  b1 > 0 && b1 <= MSE_MAXBUTTONS &&
                  b2 > 0 && b2 <= MSE_MAXBUTTONS) {
+            msg = xstrdup("buttons XX and YY");
+            if (msg)
+                sprintf(msg, "buttons %d and %d", b1, b2);
             pMse->negativeZ = 1 << (b1-1);
             pMse->positiveZ = 1 << (b2-1);
             if (b3 > 0 && b3 <= MSE_MAXBUTTONS &&
                 b4 > 0 && b4 <= MSE_MAXBUTTONS) {
+                if (msg)
+                    free(msg);
+                msg = xstrdup("buttons XX, YY, ZZ and WW");
+                if (msg)
+                    sprintf(msg, "buttons %d, %d, %d and %d", b1, b2, b3, b4);
                 pMse->negativeW = 1 << (b3-1);
                 pMse->positiveW = 1 << (b4-1);
-#ifdef USE_ASPRINTF
-                if (asprintf(&msg, "buttons %d, %d, %d and %d",
-                             b1, b2, b3, b4) == -1)
-                    msg = NULL;
-#else
-                msg = Xprintf("buttons %d, %d, %d and %d", b1, b2, b3, b4);
-#endif
-            }
-            else {
-#ifdef USE_ASPRINTF
-                if (asprintf(&msg, "buttons %d and %d", b1, b2) == -1)
-                    msg = NULL;
-#else
-                msg = Xprintf("buttons %d and %d", b1, b2);
-#endif
             }
             if (b1 > pMse->buttons) pMse->buttons = b1;
             if (b2 > pMse->buttons) pMse->buttons = b2;
@@ -540,12 +509,9 @@ MouseCommonOptions(InputInfoPtr pInfo)
             if ((sscanf(s, "%d %d", &b1, &b2) == 2) &&
                  b1 > 0 && b1 <= MSE_MAXBUTTONS &&
                  b2 > 0 && b2 <= MSE_MAXBUTTONS) {
-#ifdef USE_ASPRINTF
-                if (asprintf(&msg, "buttons %d and %d", b1, b2) == -1)
-                    msg = NULL;
-#else
-                msg = Xprintf("buttons %d and %d", b1, b2);
-#endif
+                msg = xstrdup("buttons XX and YY");
+                if (msg)
+                    sprintf(msg, "buttons %d and %d", b1, b2);
                 pMse->negativeX = b1;
                 pMse->positiveX = b2;
                 if (b1 > pMse->buttons) pMse->buttons = b1;
@@ -568,12 +534,9 @@ MouseCommonOptions(InputInfoPtr pInfo)
             if ((sscanf(s, "%d %d", &b1, &b2) == 2) &&
                  b1 > 0 && b1 <= MSE_MAXBUTTONS &&
                  b2 > 0 && b2 <= MSE_MAXBUTTONS) {
-#ifdef USE_ASPRINTF
-                if (asprintf(&msg, "buttons %d and %d", b1, b2) == -1)
-                    msg = NULL;
-#else
-                msg = Xprintf("buttons %d and %d", b1, b2);
-#endif
+                msg = xstrdup("buttons XX and YY");
+                if (msg)
+                    sprintf(msg, "buttons %d and %d", b1, b2);
                 pMse->negativeY = b1;
                 pMse->positiveY = b2;
                 if (b1 > pMse->buttons) pMse->buttons = b1;
@@ -641,14 +604,10 @@ MouseCommonOptions(InputInfoPtr pInfo)
         char *msg = NULL;
 
         if ((sscanf(s, "%d %d", &b1, &b2) == 2) &&
-            (b1 > 0) && (b1 <= MSE_MAXBUTTONS) &&
-            (b2 > 0) && (b2 <= MSE_MAXBUTTONS)) {
-#ifdef USE_ASPRINTF
-            if (asprintf(&msg, "buttons %d and %d", b1, b2) == -1)
-                msg = NULL;
-#else
-            msg = Xprintf("buttons %d and %d", b1, b2);
-#endif
+        (b1 > 0) && (b1 <= MSE_MAXBUTTONS) && (b2 > 0) && (b2 <= MSE_MAXBUTTONS)) {
+            msg = xstrdup("buttons XX and YY");
+            if (msg)
+                sprintf(msg, "buttons %d and %d", b1, b2);
             pMse->doubleClickTargetButton = b1;
             pMse->doubleClickTargetButtonMask = 1 << (b1 - 1);
             pMse->doubleClickSourceButtonMask = 1 << (b2 - 1);
@@ -860,8 +819,11 @@ MousePickProtocol(InputInfoPtr pInfo, const char* device,
     {
         const char *osProt;
         if (osInfo->SetupAuto && (osProt = osInfo->SetupAuto(pInfo,NULL))) {
-            protocolID = ProtocolNameToID(osProt);
-            protocol = osProt;
+            MouseProtocolID id = ProtocolNameToID(osProt);
+            if (id == PROT_UNKNOWN || id == PROT_UNSUP) {
+                protocolID = id;
+                protocol = osProt;
+            }
         }
     }
 
@@ -1771,11 +1733,6 @@ MouseProc(DeviceIntPtr device, int what)
         if (pInfo->fd == -1)
             xf86Msg(X_WARNING, "%s: cannot open input device\n", pInfo->name);
         else {
-#if defined(__NetBSD__) && defined(WSCONS_SUPPORT) && defined(WSMOUSEIO_SETVERSION)
-            int version = WSMOUSE_EVENT_VERSION;
-            if (ioctl(pInfo->fd, WSMOUSEIO_SETVERSION, &version) == -1)
-                xf86Msg(X_WARNING, "%s: cannot set version\n", pInfo->name);
-#endif
             if (pMse->xisbscale)
                 pMse->buffer = XisbNew(pInfo->fd, pMse->xisbscale * 4);
             else
@@ -2036,33 +1993,22 @@ static CARD32
 buttonTimer(InputInfoPtr pInfo)
 {
     MouseDevPtr pMse;
-#if !HAVE_THREADED_INPUT
     int sigstate;
-#endif
     int id;
 
     pMse = pInfo->private;
 
-#if HAVE_THREADED_INPUT
-    input_lock();
-#else
     sigstate = xf86BlockSIGIO ();
-#endif
 
     pMse->emulate3Pending = FALSE;
     if ((id = stateTab[pMse->emulateState][4][0]) != 0) {
         xf86PostButtonEvent(pInfo->dev, 0, abs(id), (id >= 0), 0, 0);
         pMse->emulateState = stateTab[pMse->emulateState][4][2];
     } else {
-        LogMessageVerbSigSafe(X_WARNING, -1,
-            "Got unexpected buttonTimer in state %d\n", pMse->emulateState);
+        LogMessageVerbSigSafe(X_WARNING, -1, "Got unexpected buttonTimer in state %d\n", pMse->emulateState);
     }
 
-#if HAVE_THREADED_INPUT
-    input_unlock();
-#else
     xf86UnblockSIGIO (sigstate);
-#endif
     return 0;
 }
 
@@ -2100,26 +2046,16 @@ Emulate3ButtonsSoft(InputInfoPtr pInfo)
     if (!pMse->emulate3ButtonsSoft)
         return TRUE;
 
-#if defined(__NetBSD__) && defined(WSCONS_SUPPORT)
-    /*
-     * On NetBSD a wsmouse is a multiplexed device. Imagine a notebook
-     * with two-button mousepad, and an external USB mouse plugged in
-     * temporarily. After using button 3 on the external mouse and
-     * unplugging it again, the mousepad will still need to emulate
-     * 3 buttons.
-     */
-    return TRUE;
-#else
-    LogMessageVerbSigSafe(X_INFO, 4,
-        "mouse: 3rd Button detected: disabling emulate3Button\n");
+    LogMessageVerbSigSafe(X_INFO, 4, "mouse: 3rd Button detected: disabling emulate3Button\n");
 
     Emulate3ButtonsSetEnabled(pInfo, FALSE);
 
     return FALSE;
-#endif
 }
 
-static void MouseBlockHandler(BLOCK_HANDLER_ARGS)
+static void MouseBlockHandler(pointer data,
+                              struct timeval **waitTime,
+                              pointer LastSelectMask)
 {
     InputInfoPtr    pInfo = (InputInfoPtr) data;
     MouseDevPtr     pMse = (MouseDevPtr) pInfo->private;
@@ -2134,7 +2070,9 @@ static void MouseBlockHandler(BLOCK_HANDLER_ARGS)
     }
 }
 
-static void MouseWakeupHandler(WAKEUP_HANDLER_ARGS)
+static void MouseWakeupHandler(pointer data,
+                               int i,
+                               pointer LastSelectMask)
 {
     InputInfoPtr    pInfo = (InputInfoPtr) data;
     MouseDevPtr     pMse = (MouseDevPtr) pInfo->private;
@@ -2173,8 +2111,8 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
     if (pMse->doubleClickSourceButtonMask) {
         if (buttons & pMse->doubleClickSourceButtonMask) {
             if (!(pMse->doubleClickOldSourceState)) {
-                /* double-click button has just been pressed.
-                 * Ignore it if target button is already down.
+                /* double-click button has just been pressed. Ignore it if target button
+                 * is already down.
                  */
                 if (!(buttons & pMse->doubleClickTargetButtonMask)) {
                     /* Target button isn't down, so send a double-click */
@@ -2216,10 +2154,8 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
                      * If the button is released early enough emit the button
                      * press/release events
                      */
-                    xf86PostButtonEvent(pInfo->dev, 0, pMse->wheelButton,
-                                        1, 0, 0);
-                    xf86PostButtonEvent(pInfo->dev, 0, pMse->wheelButton,
-                                        0, 0, 0);
+                    xf86PostButtonEvent(pInfo->dev, 0, pMse->wheelButton, 1, 0, 0);
+                    xf86PostButtonEvent(pInfo->dev, 0, pMse->wheelButton, 0, 0, 0);
                 }
             }
         } else
@@ -2251,10 +2187,8 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
                          */
                         if (!(emuWheelButtonMask & buttons) ||
                             (emuWheelButtonMask & wheelButtonMask)) {
-                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton,
-                                                1, 0, 0);
-                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton,
-                                                0, 0, 0);
+                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton, 1, 0, 0);
+                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton, 0, 0, 0);
                         }
                     }
                 }
@@ -2281,10 +2215,8 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
                          */
                         if (!(emuWheelButtonMask & buttons) ||
                             (emuWheelButtonMask & wheelButtonMask)) {
-                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton,
-                                                1, 0, 0);
-                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton,
-                                                0, 0, 0);
+                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton, 1, 0, 0);
+                            xf86PostButtonEvent(pInfo->dev, 0, emuWheelButton, 0, 0, 0);
                         }
                     }
                 }
@@ -2395,8 +2327,7 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
                 stateTab[pMse->emulateState][emulateButtons][2];
 
             if (stateTab[pMse->emulateState][4][0] != 0) {
-                pMse->emulate3Expires =
-                    GetTimeInMillis() + pMse->emulate3Timeout;
+                pMse->emulate3Expires = GetTimeInMillis () + pMse->emulate3Timeout;
                 pMse->emulate3Pending = TRUE;
             } else {
                 pMse->emulate3Pending = FALSE;
@@ -2677,7 +2608,7 @@ SetupMouse(InputInfoPtr pInfo)
 **
 ** NOTE: There are different versions of both MouseMan and TrackMan!
 **       Hence I add another protocol PROT_LOGIMAN, which the user can
-**       specify as MouseMan in an xorg.conf file. This entry was
+**       specify as MouseMan in his XF86Config file. This entry was
 **       formerly handled as a special case of PROT_MS. However, people
 **       who don't have the middle button problem, can still specify
 **       Microsoft and use PROT_MS.
@@ -3293,20 +3224,14 @@ createProtoList(MouseDevPtr pMse, MouseProtocolID *protoList)
     unsigned char *para;
     mousePrivPtr mPriv = (mousePrivPtr)pMse->mousePriv;
     MouseProtocolID *tmplist = NULL;
-#if !HAVE_THREADED_INPUT
     int blocked;
-#endif
 
     AP_DBGC(("Autoprobe: "));
     for (i = 0; i < mPriv->count; i++)
         AP_DBGC(("%2.2x ", (unsigned char) mPriv->data[i]));
     AP_DBGC(("\n"));
 
-#if HAVE_THREADED_INPUT
-    input_lock();
-#else
     blocked = xf86BlockSIGIO ();
-#endif
 
     /* create a private copy first so we can write in the old list */
     if ((tmplist = malloc(sizeof(MouseProtocolID) * NUM_AUTOPROBE_PROTOS))){
@@ -3415,11 +3340,7 @@ createProtoList(MouseDevPtr pMse, MouseProtocolID *protoList)
         }
     }
 
-#if HAVE_THREADED_INPUT
-    input_unlock();
-#else
     xf86UnblockSIGIO(blocked);
-#endif
 
     mPriv->protoList[k] = PROT_UNKNOWN;
 

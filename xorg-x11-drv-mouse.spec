@@ -6,8 +6,8 @@
 
 Summary:   Xorg X11 mouse input driver
 Name:      xorg-x11-drv-mouse
-Version:   1.9.2
-Release:   2%{?gitdate:.%{gitdate}}%{?dist}
+Version:   1.9.0
+Release:   4%{?gitdate:.%{gitdate}}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -20,9 +20,7 @@ Source2:   commitid
 Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
 %endif
 
-Patch001:  0001-Adapt-to-removal-of-xf86GetOS.patch
-
-ExcludeArch: s390 s390x
+ExcludeArch: s390 s390x %{?rhel:ppc ppc64}
 
 BuildRequires: autoconf automake libtool
 BuildRequires: xorg-x11-server-devel >= 1.10.99.902
@@ -36,7 +34,6 @@ X.Org X11 mouse input driver.
 
 %prep
 %setup -q -n %{tarball}-%{?gitdate:%{gitdate}}%{!?gitdate:%{version}}
-%patch01 -p1
 
 %build
 autoreconf --force -v --install || exit 1
@@ -74,24 +71,6 @@ X.Org X11 mouse input driver development files.
 %{_libdir}/pkgconfig/xorg-mouse.pc
 
 %changelog
-* Tue Jun 19 2018 Peter Hutterer <peter.hutterer@redhat.com> 1.9.2-2
-- Avoid use of xf86GetOS (#1592607)
-
-* Fri Jan 27 2017 Peter Hutterer <peter.hutterer@redhat.com> 1.9.2-1
-- xf86-input-mouse 1.9.2 (#1401648)
-
-* Mon Apr 20 2015 Peter Hutterer <peter.hutterer@redhat.com> 1.9.1-1
-- xf86-input-mouse 1.9.1 (#1194879)
-
-* Wed Aug 20 2014 Adam Jackson <ajax@redhat.com> 1.9.0-7
-- Build on PPC
-
-* Wed Jan 15 2014 Adam Jackson <ajax@redhat.com> - 1.9.0-6
-- 1.15 ABI rebuild
-
-* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 1.9.0-5
-- Mass rebuild 2013-12-27
-
 * Wed Nov 06 2013 Adam Jackson <ajax@redhat.com> - 1.9.0-4
 - 1.15RC1 ABI rebuild
 
